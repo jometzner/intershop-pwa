@@ -26,7 +26,7 @@ export class PunchoutFunctionsEffects {
       filter(([, basketId]) => !!basketId),
       concatMap(([, basketId]) =>
         this.punchoutService.getBasketPunchoutData(basketId).pipe(
-          map(data => this.punchoutService.submitPunchoutData(data)),
+          map(data => this.punchoutService.submitPunchoutData(data, 'cxml')),
           mapTo(transferPunchoutBasketSuccess()),
           mapErrorToAction(transferPunchoutBasketFail)
         )

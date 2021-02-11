@@ -72,7 +72,7 @@ export class PunchoutPageGuard implements CanActivate {
             return this.punchoutService
               .getProductPunchoutData(route.queryParamMap.get('PRODUCTID'), route.queryParamMap.get('QUANTITY'))
               .pipe(
-                tap(data => this.punchoutService.submitPunchoutData(data)),
+                tap(data => this.punchoutService.submitPunchoutData(data, 'oci')),
                 mapTo(false)
               );
 
@@ -82,7 +82,7 @@ export class PunchoutPageGuard implements CanActivate {
             route.queryParamMap.get('SEARCHSTRING')
           ) {
             return this.punchoutService.getSearchPunchoutData(route.queryParamMap.get('SEARCHSTRING')).pipe(
-              tap(data => this.punchoutService.submitPunchoutData(data, false)),
+              tap(data => this.punchoutService.submitPunchoutData(data, 'oci', false)),
               mapTo(false)
             );
 

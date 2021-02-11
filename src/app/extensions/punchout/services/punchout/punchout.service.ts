@@ -13,6 +13,8 @@ import { whenTruthy } from 'ish-core/utils/operators';
 
 import { PunchoutUser } from '../../models/punchout-user/punchout-user.model';
 
+export type PunchoutType = 'oci' | 'cxml';
+
 @Injectable({ providedIn: 'root' })
 export class PunchoutService {
   constructor(private apiService: ApiService, private cookiesService: CookiesService, private store: Store) {}
@@ -156,17 +158,26 @@ export class PunchoutService {
    * @param data     The punchout data retrieved from ICM.
    * @param submit   Controls whether the HTML form is actually submitted (default) or not (only created in the document body).
    */
-  submitPunchoutData(data: Attribute<string>[], submit = true) {
-    const hookUrl = this.cookiesService.get('hookURL');
-    if (!hookUrl) {
-      return throwError('no HOOK_URL available in cookies to submitPunchoutData()');
-    }
+  submitPunchoutData(data: Attribute<string>[], type: PunchoutType, submit = true) {
     if (!data || !data.length) {
       return throwError('submitPunchoutData() of the punchout service called without data');
     }
 
-    // create a form and send it to the hook URL
-    const form = this.createOciForm(data, hookUrl);
+    // create a form
+    let form: HTMLFormElement;
+
+    // prepare the form according to the given punchout type
+    if (type === 'oci') {
+      const hookUrl = this.cookiesService.get('hookURL');
+      if (!hookUrl) {
+        return throwError('no HOOK_URL available in cookies for OCI Punchout submitPunchoutData()');
+      }
+      form = this.createOciForm(data, hookUrl);
+    } else if (type === 'cxml') {
+      form = this.createCxmlForm();
+    }
+
+    // replace the document content with the form and submit the form
     document.body.innerHTML = '';
     document.body.appendChild(form);
     if (submit) {
@@ -192,5 +203,96 @@ export class PunchoutService {
       ociForm.appendChild(input); // add the input to the OCI form
     });
     return ociForm;
+  }
+
+  /**
+   * Creates an cXML punchout compatible form with a hidden input field that contains the cXML PunchOutOrderMessage.
+   * @param   punchOutOrderMessage
+   * @param   browserFormPostUrl
+   * @returns           The cXML punchout form
+   */
+  private createCxmlForm(
+    punchOutOrderMessage = `<!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.014/cXML.dtd">
+<cXML payloadID="958074737352&www.workchairs.com"
+ timestamp="2004-06-14T12:59:09-07:00">
+	<Header>
+		<From>
+			<Credential domain="DUNS">
+				<Identity>12345678</Identity>
+			</Credential>
+		</From>
+		<To>
+			<Credential domain="NetworkID">
+				<Identity>AN01000002792</Identity>
+			</Credential>
+		</To>
+		<Sender>
+			<Credential domain="www.workchairs.com">
+				<Identity>PunchoutResponse</Identity>
+			</Credential>
+			<UserAgent>Our PunchOut Site V4.2</UserAgent>
+		</Sender>
+	</Header>
+	<Message>
+		<PunchOutOrderMessage>
+			<BuyerCookie>1J3YVWU9QWMTB</BuyerCookie>
+			<PunchOutOrderMessageHeader operationAllowed="create">
+				<Total>
+					<Money currency="USD">14.27</Money>
+				</Total>
+			</PunchOutOrderMessageHeader>
+			<ItemIn quantity="2">
+				<ItemID>
+					<SupplierPartID>3171 04 20</SupplierPartID>
+					<SupplierPartAuxiliaryID>ContractId=1751
+					    ItemId=417714 </SupplierPartAuxiliaryID>
+				</ItemID>
+				<ItemDetail>
+					<UnitPrice>
+						<Money currency="USD">1.22</Money>
+					</UnitPrice>
+					<Description xml:lang="en">ADAPTER; TUBE; 5/32";
+					    MALE; #10-32 UNF; FITTING
+					</Description>
+					<UnitOfMeasure>EA</UnitOfMeasure>
+					<Classification domain="UNSPSC">21101510</Classification>
+					<ManufacturerName>Dogwood</ManufacturerName>
+				</ItemDetail>
+			</ItemIn>
+			<ItemIn quantity="1">
+				<ItemID>
+					<SupplierPartID>3801 04 20</SupplierPartID>
+						<SupplierPartAuxiliaryID> ContractId=1751
+						    ItemId=417769 </SupplierPartAuxiliaryID>
+				</ItemID>
+				<ItemDetail>
+					<UnitPrice>
+						<Money currency="USD">11.83</Money>
+					</UnitPrice>
+					<Description xml:lang="en">ADAPTER; TUBE; 5/32"; 2 PER PACK;
+							MALE #10-32 UNF; STAINLESS STEEL; FITTING<
+					</Description>
+					<UnitOfMeasure>EA</UnitOfMeasure>
+					<Classification domain="UNSPSC">21101510</Classification>
+					<ManufacturerName>Legris</ManufacturerName>
+					<LeadTime>2</LeadTime>
+				</ItemDetail>
+				<SupplierID domain="DUNS">022878979</SupplierID>
+			</ItemIn>
+		</PunchOutOrderMessage>
+	</Message>
+</cXML>`,
+    browserFormPostUrl = 'https://punchoutcommerce.com/tools/cxml-punchout-return'
+  ): HTMLFormElement {
+    const cXmlForm = document.createElement('form');
+    cXmlForm.method = 'post';
+    cXmlForm.action = browserFormPostUrl;
+    cXmlForm.enctype = 'application/x-www-form-urlencoded';
+    const input = document.createElement('input');
+    input.setAttribute('name', 'cXML-urlencoded');
+    input.setAttribute('value', punchOutOrderMessage); // set the cXML value
+    input.setAttribute('type', 'hidden');
+    cXmlForm.appendChild(input);
+    return cXmlForm;
   }
 }
