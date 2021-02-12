@@ -11,7 +11,7 @@ import { getLoggedInCustomer } from 'ish-core/store/customer/user';
 import { CookiesService } from 'ish-core/utils/cookies/cookies.service';
 import { whenTruthy } from 'ish-core/utils/operators';
 
-import { PunchoutUser } from '../../models/punchout-user/punchout-user.model';
+import { PunchoutType, PunchoutUser } from '../../models/punchout-user/punchout-user.model';
 
 @Injectable({ providedIn: 'root' })
 export class PunchoutService {
@@ -25,6 +25,24 @@ export class PunchoutService {
   private punchoutHeaders = new HttpHeaders({
     Accept: 'application/vnd.intershop.punchout.v2+json',
   });
+
+  /**
+   * Gets all supported punchout formats (oci, cxml).
+   * @returns    An array of punchout types.
+   */
+  getPunchoutTypes(): Observable<PunchoutType[]> {
+    return this.currentCustomer$.pipe(
+      switchMap(customer =>
+        this.apiService.get(`customers/${customer.customerNo}/punchouts`, { headers: this.punchoutHeaders }).pipe(
+          unpackEnvelope<Link>(),
+          this.apiService.resolveLinks<{ punchoutType: PunchoutType; version: string }>({
+            headers: this.punchoutHeaders,
+          }),
+          map(types => types?.map(type => type.punchoutType))
+        )
+      )
+    );
+  }
 
   /**
    * Gets the list of punchout users.
