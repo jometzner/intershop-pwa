@@ -149,9 +149,9 @@ export class PunchoutService {
   /**
    * Gets a JSON object with the necessary punchout data for the product validation.
    * @param productSKU   The product SKU of the product to validate.
-   * @param quantity     The quantity for the validation.
+   * @param quantity     The quantity for the validation (default: '1').
    */
-  getProductPunchoutData(productId: string, quantity: string): Observable<Attribute<string>[]> {
+  getProductPunchoutData(productId: string, quantity = '1'): Observable<Attribute<string>[]> {
     if (!productId) {
       return throwError('getProductPunchoutData() of the punchout service called without productSKU');
     }

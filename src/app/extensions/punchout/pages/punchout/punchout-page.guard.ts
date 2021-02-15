@@ -66,7 +66,7 @@ export class PunchoutPageGuard implements CanActivate {
             // Validation of Products
           } else if (route.queryParamMap.get('FUNCTION') === 'VALIDATE' && route.queryParamMap.get('PRODUCTID')) {
             return this.punchoutService
-              .getProductPunchoutData(route.queryParamMap.get('PRODUCTID'), route.queryParamMap.get('QUANTITY'))
+              .getProductPunchoutData(route.queryParamMap.get('PRODUCTID'), route.queryParamMap.get('QUANTITY') || '1')
               .pipe(
                 tap(data => this.punchoutService.submitPunchoutData(data)),
                 mapTo(false)
