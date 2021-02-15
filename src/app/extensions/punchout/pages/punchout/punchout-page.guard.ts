@@ -23,9 +23,9 @@ export class PunchoutPageGuard implements CanActivate {
   ) {}
 
   canActivate(route: ActivatedRouteSnapshot) {
-    // check for a HOOK_URL before doing anything with the punchout route
-    if (!route.queryParamMap.has('HOOK_URL')) {
-      this.appFacade.setBusinessError('punchout.error.missing.hook_url');
+    // check for a HOOK_URL or sid before doing anything with the punchout route
+    if (!(route.queryParamMap.has('HOOK_URL') || route.queryParamMap.has('sid'))) {
+      this.appFacade.setBusinessError('punchout.error.missing.hook_url_sid');
       return false;
     }
 
@@ -34,11 +34,15 @@ export class PunchoutPageGuard implements CanActivate {
       return this.router.parseUrl('/loading');
     }
 
-    // initiate the punchout user login with the given credentials
-    this.accountFacade.loginUser({
-      login: route.queryParamMap.get('USERNAME'),
-      password: route.queryParamMap.get('PASSWORD'),
-    });
+    // initiate the punchout user login with the token (cXML) or the given credentials (OCI)
+    if (route.queryParamMap.has('sid')) {
+      this.accountFacade.loginUserWithToken(route.queryParamMap.get('sid'));
+    } else {
+      this.accountFacade.loginUser({
+        login: route.queryParamMap.get('USERNAME'),
+        password: route.queryParamMap.get('PASSWORD'),
+      });
+    }
 
     return race(
       // throw an error if a user login error occurs
