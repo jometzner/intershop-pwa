@@ -69,7 +69,7 @@ describe('Punchout Functions Effects', () => {
       actions$ = of(transferPunchoutBasket());
 
       effects.transferPunchoutBasket$.subscribe(() => {
-        verify(punchoutService.submitPunchoutData(anything())).once();
+        verify(punchoutService.submitPunchoutData(anything(), 'cxml')).once();
         done();
       });
     });
