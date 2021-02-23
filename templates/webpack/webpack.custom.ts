@@ -30,15 +30,18 @@ export default (config: webpack.Configuration, _: CustomWebpackBrowserSchema, ta
   }
 
   // set production mode
+  const ngrxRuntimeChecks = !!process.env.TESTING || !production;
   config.plugins.push(
     new webpack.DefinePlugin({
       PWA_VERSION: JSON.stringify(
         `${require('../../package.json').version} built ${new Date()} - production:${production}`
       ),
       PRODUCTION_MODE: production,
+      NGRX_RUNTIME_CHECKS: ngrxRuntimeChecks,
     })
   );
   log('setting production:', production);
+  log('setting ngrxRuntimeChecks:', ngrxRuntimeChecks);
 
   if (production) {
     // splitChunks not available for SSR build
@@ -53,12 +56,14 @@ export default (config: webpack.Configuration, _: CustomWebpackBrowserSchema, ta
       cacheGroups.common.priority = 20;
     }
 
-    log('setting up data-testing-id removal');
-    // remove testing ids when loading html files
-    config.module.rules.push({
-      test: /\.html$/,
-      use: [{ loader: join(__dirname, 'data-testing-id-loader.js') }],
-    });
+    if (!process.env.TESTING) {
+      log('setting up data-testing-id removal');
+      // remove testing ids when loading html files
+      config.module.rules.push({
+        test: /\.html$/,
+        use: [{ loader: join(__dirname, 'data-testing-id-loader.js') }],
+      });
+    }
   }
 
   if (key) {
