@@ -1,5 +1,4 @@
 import { CustomWebpackBrowserSchema, TargetOptions } from '@angular-builders/custom-webpack';
-import { AngularCompilerPlugin } from '@ngtools/webpack';
 import { existsSync } from 'fs';
 import { join, resolve } from 'path';
 import * as webpack from 'webpack';
@@ -7,6 +6,13 @@ import * as webpack from 'webpack';
 const log = (...txt) => {
   // tslint:disable-next-line: no-console
   console.log('Custom Webpack:', ...txt);
+};
+
+type AngularPlugin = webpack.Plugin & {
+  options: {
+    directTemplateLoading: boolean;
+    fileReplacements: object;
+  };
 };
 
 export default (
@@ -20,7 +26,10 @@ export default (
     console.warn('cannot handle multiple configurations, ignoring', specificConfigurations.slice(1));
   }
   const key = specificConfigurations.length && specificConfigurations[0];
-  const angularCompilerPlugin = config.plugins.find(pl => pl instanceof AngularCompilerPlugin) as AngularCompilerPlugin;
+
+  const angularCompilerPlugin = config.plugins.find(
+    (pl: any) => pl.options?.directTemplateLoading !== undefined
+  ) as AngularPlugin;
 
   if (angularCompilerPlugin.options.directTemplateLoading) {
     // deactivate directTemplateLoading so that webpack loads html files
@@ -91,9 +100,7 @@ export default (
 
     if (existsSync(specialEnvironmentFile)) {
       log(`setting up environments replacement for "${key}"`);
-      angularCompilerPlugin.options.hostReplacementPaths[
-        join(environmentsBase, 'environment.ts')
-      ] = specialEnvironmentFile;
+      angularCompilerPlugin.options.fileReplacements[join(environmentsBase, 'environment.ts')] = specialEnvironmentFile;
     }
   }
 
