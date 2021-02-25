@@ -12,6 +12,11 @@ const log = (...txt) => {
   console.log('Custom Webpack:', ...txt);
 };
 
+const warn = (...txt: unknown[]) => {
+  // tslint:disable-next-line: no-console
+  console.warn('Custom Webpack:', ...txt);
+};
+
 export default (
   config: webpack.Configuration,
   angularJsonConfig: CustomWebpackBrowserSchema,
@@ -149,6 +154,13 @@ export default (
       angularCompilerPlugin.options.hostReplacementPaths[
         join(environmentsBase, 'environment.ts')
       ] = specialEnvironmentFile;
+    }
+  }
+
+  if (angularJsonConfig.tsConfig.endsWith('tsconfig.app-no-checks.json')) {
+    warn('using tsconfig without compile checks');
+    if (production) {
+      warn('USING NO COMPILE CHECKS SHOULD NEVER BE DONE IN PRODUCTION MODE!');
     }
   }
 
