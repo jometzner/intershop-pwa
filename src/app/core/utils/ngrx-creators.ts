@@ -35,7 +35,7 @@ export function unsetLoadingAndErrorOn<S extends { loading: boolean | number }>(
   const stateFnc = (state: S) => ({
     ...state,
     loading: calculateLoading(state),
-    error: undefined,
+    error: undefined as HttpError,
   });
   if (actionCreators.length === 1) {
     return on(actionCreators[0], stateFnc);
