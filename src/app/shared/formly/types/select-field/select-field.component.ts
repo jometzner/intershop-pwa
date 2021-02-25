@@ -11,8 +11,8 @@ export class SelectFieldComponent extends FieldType {
   formControl: FormControl;
   defaultOptions = {
     templateOptions: {
-      options: [],
-      compareWith(o1, o2) {
+      options: [] as unknown[],
+      compareWith(o1: unknown, o2: unknown) {
         return o1 === o2;
       },
     },

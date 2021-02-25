@@ -7,7 +7,7 @@ import * as webpack from 'webpack';
 
 const purgecssPlugin = require('purgecss-webpack-plugin');
 
-const log = (...txt) => {
+const log = (...txt: unknown[]) => {
   // tslint:disable-next-line: no-console
   console.log('Custom Webpack:', ...txt);
 };
@@ -139,7 +139,7 @@ export default (
       loader: 'file-replace-loader',
       options: {
         condition: 'if-replacement-exists',
-        replacement(resourcePath) {
+        replacement(resourcePath: string) {
           return resolve(resourcePath.replace('.component.', `.component.${key}.`));
         },
         async: true,
@@ -151,9 +151,10 @@ export default (
 
     if (existsSync(specialEnvironmentFile)) {
       log(`setting up environments replacement for "${key}"`);
-      angularCompilerPlugin.options.hostReplacementPaths[
-        join(environmentsBase, 'environment.ts')
-      ] = specialEnvironmentFile;
+      const replacements = angularCompilerPlugin.options.hostReplacementPaths as {
+        [path: string]: string;
+      };
+      replacements[join(environmentsBase, 'environment.ts')] = specialEnvironmentFile;
     }
   }
 
