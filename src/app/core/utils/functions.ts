@@ -40,3 +40,7 @@ export function mergeDeep(target: any, source: any) {
   }
   return output;
 }
+
+export function isArrayEqual<T>(a1: T[], a2: T[]): boolean {
+  return (!a1 && !a2) || (a1?.length === a2?.length && a1?.every((el, idx) => a2?.[idx] === el));
+}
