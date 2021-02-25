@@ -21,7 +21,7 @@ export class UserProfileFormComponent implements OnInit, OnDestroy {
   currentLocale$: Observable<Locale>;
   private destroy$ = new Subject();
 
-  titles = [];
+  titles: string[] = [];
 
   constructor(private appFacade: AppFacade) {}
 
