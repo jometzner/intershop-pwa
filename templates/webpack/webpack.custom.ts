@@ -11,7 +11,7 @@ const log = (...txt) => {
 type AngularPlugin = webpack.Plugin & {
   options: {
     directTemplateLoading: boolean;
-    fileReplacements: object;
+    fileReplacements: { [source: string]: string };
   };
 };
 
@@ -28,7 +28,7 @@ export default (
   const key = specificConfigurations.length && specificConfigurations[0];
 
   const angularCompilerPlugin = config.plugins.find(
-    (pl: any) => pl.options?.directTemplateLoading !== undefined
+    (pl: AngularPlugin) => pl.options?.directTemplateLoading !== undefined
   ) as AngularPlugin;
 
   if (angularCompilerPlugin.options.directTemplateLoading) {
