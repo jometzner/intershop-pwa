@@ -11,7 +11,11 @@ beforeEach(() => {
 
   const logFunction = global.console.log;
   global.console.log = (...args: unknown[]) => {
-    if (args?.some(arg => arg instanceof Error)) {
+    if (
+      args?.some(
+        arg => arg instanceof Error || (typeof arg === 'string' && arg.startsWith('@ngrx/store: The feature name'))
+      )
+    ) {
       fail(...args);
     }
     logFunction(...args);
