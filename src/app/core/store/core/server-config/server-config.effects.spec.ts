@@ -7,7 +7,6 @@ import { instance, mock, when } from 'ts-mockito';
 
 import { ConfigurationService } from 'ish-core/services/configuration/configuration.service';
 import { CoreStoreModule } from 'ish-core/store/core/core-store.module';
-import { GeneralStoreModule } from 'ish-core/store/general/general-store.module';
 import { makeHttpError } from 'ish-core/utils/dev/api-service-utils';
 import { routerTestNavigationAction } from 'ish-core/utils/dev/routing';
 
@@ -24,7 +23,7 @@ describe('Server Config Effects', () => {
     configurationServiceMock = mock(ConfigurationService);
 
     TestBed.configureTestingModule({
-      imports: [CoreStoreModule.forTesting(), GeneralStoreModule.forTesting('serverConfig')],
+      imports: [CoreStoreModule.forTesting(['serverConfig'])],
       providers: [
         ServerConfigEffects,
         provideMockActions(() => actions$),
