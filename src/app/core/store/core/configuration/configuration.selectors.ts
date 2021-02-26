@@ -1,7 +1,9 @@
 import { createSelector, createSelectorFactory, defaultMemoize } from '@ngrx/store';
 import { isEqual } from 'lodash-es';
 
+import { Locale } from 'ish-core/models/locale/locale.model';
 import { getCoreState } from 'ish-core/store/core/core-store';
+import { getServerConfigParameter } from 'ish-core/store/core/server-config';
 
 import { ConfigurationState } from './configuration.reducer';
 
@@ -33,14 +35,43 @@ export const getFeatures = createSelector(getConfigurationState, state => state.
 
 export const getTheme = createSelector(getConfigurationState, state => state.theme);
 
-export const getAvailableLocales = createSelector(getConfigurationState, state => state.locales);
+/**
+ * locales configured in environment.ts
+ */
+const internalLocales = createSelector(getConfigurationState, state => state.locales);
 
 /**
- * selects the current locale if set. If not returns the first available locale
+ * environment.ts locales filtered by locales configured in ICM
+ */
+export const getAvailableLocales = createSelector(
+  internalLocales,
+  getServerConfigParameter<string[]>('general.locales'),
+  (configured, activated) => (!activated?.length ? configured : configured.filter(l => activated.includes(l.lang)))
+);
+
+const internalRequestedLocale = createSelector(getConfigurationState, state => state.lang);
+
+function findBestLocale(available: Locale[], requested: string): Locale {
+  const modified = requested?.replace('-', '_');
+  const perfectMatch = available?.find(l => l.lang === modified);
+  if (perfectMatch) {
+    return perfectMatch;
+  }
+  const justLanguage = modified?.replace(/_.*/, '');
+  return available.find(l => l.lang.startsWith(justLanguage));
+}
+
+/**
+ * tries to find a best match for requested locale,
+ * falls back to ICM configured default locale if no match is found,
+ * and finally falls back to first available locale if none is configured
  */
 export const getCurrentLocale = createSelector(
-  getConfigurationState,
-  state => state.locales.find(l => l.lang === state.lang) || state.locales[0]
+  getAvailableLocales,
+  internalRequestedLocale,
+  getServerConfigParameter<string>('general.defaultLocale'),
+  (available, requested, configuredDefault) =>
+    findBestLocale(available, requested) || findBestLocale(available, configuredDefault) || available[0]
 );
 
 export const getDeviceType = createSelector(getConfigurationState, state => state._deviceType);

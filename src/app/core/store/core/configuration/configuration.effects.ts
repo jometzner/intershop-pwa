@@ -43,7 +43,9 @@ export class ConfigurationEffects {
         debounceTime(0),
         whenTruthy()
       )
-      .subscribe(lang => translateService.use(lang));
+      .subscribe(lang => {
+        translateService.use(lang);
+      });
   }
 
   setInitialRestEndpoint$ = createEffect(() =>

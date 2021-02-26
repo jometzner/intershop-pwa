@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
+import { Locale } from 'ish-core/models/locale/locale.model';
 import { CoreStoreModule } from 'ish-core/store/core/core-store.module';
+import { loadServerConfigSuccess } from 'ish-core/store/core/server-config';
 import { StoreWithSnapshots, provideStoreSnapshots } from 'ish-core/utils/dev/ngrx-testing';
 
 import { applyConfiguration } from './configuration.actions';
@@ -21,7 +23,7 @@ describe('Configuration Selectors', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [CoreStoreModule.forTesting(['configuration'])],
+      imports: [CoreStoreModule.forTesting(['configuration', 'serverConfig'])],
       providers: [provideStoreSnapshots()],
     });
 
@@ -104,6 +106,101 @@ describe('Configuration Selectors', () => {
           "type": "id",
         }
       `);
+    });
+  });
+
+  describe('after setting default locales', () => {
+    beforeEach(() => {
+      store$.dispatch(
+        applyConfiguration({
+          locales: [
+            { lang: 'de_DE' },
+            { lang: 'en_US' },
+            { lang: 'fr_BE' },
+            { lang: 'nl_BE' },
+            { lang: 'no_NO' },
+            { lang: 'zh-CN' },
+          ] as Locale[],
+        })
+      );
+    });
+
+    describe('without ICM server configuration', () => {
+      it('should choose the first locale when no ICM configuration is available', () => {
+        expect(getCurrentLocale(store$.state)).toMatchInlineSnapshot(`
+                  Object {
+                    "lang": "de_DE",
+                  }
+              `);
+      });
+
+      it.each`
+        requested  | chosen
+        ${'de'}    | ${'de_DE'}
+        ${'de-DE'} | ${'de_DE'}
+        ${'no'}    | ${'no_NO'}
+        ${'zh'}    | ${'zh-CN'}
+        ${'fr'}    | ${'fr_BE'}
+        ${'en'}    | ${'en_US'}
+        ${'nl'}    | ${'nl_BE'}
+        ${'nl-BE'} | ${'nl_BE'}
+        ${'nl_BE'} | ${'nl_BE'}
+        ${'nl-NL'} | ${'nl_BE'}
+      `('should choose $chosen when $requested is requested', ({ requested, chosen }) => {
+        store$.dispatch(applyConfiguration({ lang: requested }));
+        expect(getCurrentLocale(store$.state)?.lang).toEqual(chosen);
+      });
+    });
+
+    describe('with ICM server configuration', () => {
+      beforeEach(() => {
+        store$.dispatch(
+          loadServerConfigSuccess({
+            config: {
+              general: {
+                defaultLocale: 'en_US',
+                locales: ['de_DE', 'en_US', 'fr_BE', 'nl_BE'],
+              },
+            },
+          })
+        );
+      });
+
+      it('should filter available locales for matching ICM server locales', () => {
+        expect(getAvailableLocales(store$.state)?.map(l => l.lang)).toMatchInlineSnapshot(`
+          Array [
+            "de_DE",
+            "en_US",
+            "fr_BE",
+            "nl_BE",
+          ]
+        `);
+      });
+
+      it('should choose the ICM configured default locale when ICM configuration is available', () => {
+        expect(getCurrentLocale(store$.state)).toMatchInlineSnapshot(`
+          Object {
+            "lang": "en_US",
+          }
+        `);
+      });
+
+      it.each`
+        requested  | chosen
+        ${'de'}    | ${'de_DE'}
+        ${'de-DE'} | ${'de_DE'}
+        ${'no'}    | ${'en_US'}
+        ${'zh'}    | ${'en_US'}
+        ${'fr'}    | ${'fr_BE'}
+        ${'en'}    | ${'en_US'}
+        ${'nl'}    | ${'nl_BE'}
+        ${'nl-BE'} | ${'nl_BE'}
+        ${'nl_BE'} | ${'nl_BE'}
+        ${'nl-NL'} | ${'nl_BE'}
+      `('should choose $chosen when $requested is requested', ({ requested, chosen }) => {
+        store$.dispatch(applyConfiguration({ lang: requested }));
+        expect(getCurrentLocale(store$.state)?.lang).toEqual(chosen);
+      });
     });
   });
 });
