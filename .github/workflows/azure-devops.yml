@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Event Type
-        run: echo ${{ github.event.repository.owner.login }}
+        run: echo ${{ github.event.repository.owner.login == 'jometzner' }}
       - name: Azure Pipelines Action
         if: github.event.push.repository.owner.login == 'jometzner'
         uses: Azure/pipelines@v1
