@@ -20,6 +20,8 @@ jobs:
     needs: CancelPrevious
     runs-on: ubuntu-latest
     steps:
+      - name: Debug
+        run: cat "$GITHUB_EVENT_PATH" | jq -M .
       - name: Azure Pipelines Action
         uses: Azure/pipelines@v1
         with:
