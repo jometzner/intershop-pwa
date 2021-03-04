@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Debug
         run: cat "$GITHUB_EVENT_PATH" | jq -M .
+      - name: Event Type
+        run: echo "$GITHUB_EVENT_NAME"
       - name: Azure Pipelines Action
         uses: Azure/pipelines@v1
         with:
